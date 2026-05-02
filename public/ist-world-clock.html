@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IST World Clock — Convert IST to every continent</title>
+  <style>
+    :root {
+      --bg-1: #0f172a;
+      --bg-2: #1e293b;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --face: #f8fafc;
+      --face-text: #0f172a;
+      --hand-hour: #0f172a;
+      --hand-minute: #334155;
+      --hand-second: #ef4444;
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
+        radial-gradient(1000px 500px at 110% 10%, rgba(129, 140, 248, 0.18), transparent 60%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      background-attachment: fixed;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    header p {
+      margin: 0 0 28px;
+      color: var(--text-dim);
+      font-size: 15px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      padding: 18px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .field input {
+      appearance: none;
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 15px;
+      font-family: inherit;
+      min-width: 180px;
+      color-scheme: dark;
+    }
+    .field input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--card-border);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1220;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 15px;
+      padding: 11px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    }
+    button.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(56, 189, 248, 0.25); }
+    button:active { transform: translateY(0); }
+
+    .error {
+      width: 100%;
+      color: #fca5a5;
+      font-size: 13px;
+      margin-top: 4px;
+      min-height: 18px;
+    }
+
+    .source {
+      padding: 18px 22px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(129, 140, 248, 0.18));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .source .label {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .source .value {
+      font-size: clamp(16px, 2vw, 20px);
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 22px;
+    }
+    @media (max-width: 1024px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 20px 18px 18px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.22); }
+
+    .card.is-source {
+      border-color: rgba(56, 189, 248, 0.55);
+      box-shadow: 0 10px 30px rgba(56, 189, 248, 0.18);
+    }
+
+    .card .continent {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .card .city {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .card .tz {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: -8px;
+    }
+    .card .time {
+      font-variant-numeric: tabular-nums;
+      font-size: 15px;
+      color: var(--text);
+      margin-top: 4px;
+      text-align: center;
+    }
+    .card .date {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    .clock {
+      width: 200px;
+      height: 200px;
+      display: block;
+    }
+    .clock .face {
+      fill: var(--face);
+      stroke: rgba(15, 23, 42, 0.15);
+      stroke-width: 2;
+    }
+    .clock .tick { stroke: #475569; }
+    .clock .tick.major { stroke: #0f172a; stroke-width: 2.5; }
+    .clock .tick.minor { stroke-width: 1; }
+    .clock .num {
+      fill: var(--face-text);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .clock .hand {
+      stroke-linecap: round;
+      transform-origin: 100px 100px;
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .clock .hour { stroke: var(--hand-hour); stroke-width: 6; }
+    .clock .minute { stroke: var(--hand-minute); stroke-width: 4; }
+    .clock .second { stroke: var(--hand-second); stroke-width: 2; }
+    .clock .pin {
+      fill: var(--hand-second);
+      stroke: var(--hand-hour);
+      stroke-width: 1.5;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>IST World Clock</h1>
+      <p>Pick an Indian Standard Time, and see the same instant on a clock for every continent.</p>
+    </header>
+
+    <section class="controls" aria-label="IST input">
+      <div class="field">
+        <label for="dateInput">IST Date</label>
+        <input type="date" id="dateInput" />
+      </div>
+      <div class="field">
+        <label for="timeInput">IST Time</label>
+        <input type="time" id="timeInput" step="60" />
+      </div>
+      <button id="convertBtn" type="button">Convert</button>
+      <button id="nowBtn" type="button" class="secondary">Now</button>
+      <div class="error" id="errorMsg" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="source" aria-label="Source IST">
+      <span class="label">Source IST</span>
+      <span class="value" id="sourceText">—</span>
+    </section>
+
+    <section class="grid" id="clockGrid" aria-label="World clocks"></section>
+
+    <footer>
+      Times respect Daylight Saving Time automatically via the browser's IANA timezone database.
+    </footer>
+  </div>
+
+  <script>
+    const CITIES = [
+      { continent: 'Asia',          city: 'Kolkata',  tz: 'Asia/Kolkata',       isSource: true  },
+      { continent: 'Europe',        city: 'London',   tz: 'Europe/London',      isSource: false },
+      { continent: 'North America', city: 'New York', tz: 'America/New_York',   isSource: false },
+      { continent: 'South America', city: 'Sao Paulo',tz: 'America/Sao_Paulo',  isSource: false },
+      { continent: 'Africa',        city: 'Cairo',    tz: 'Africa/Cairo',       isSource: false },
+      { continent: 'Oceania',       city: 'Sydney',   tz: 'Australia/Sydney',   isSource: false },
+      { continent: 'Antarctica',    city: 'McMurdo',  tz: 'Antarctica/McMurdo', isSource: false }
+    ];
+
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+
+    function buildClockSVG() {
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('class', 'clock');
+      svg.setAttribute('viewBox', '0 0 200 200');
+      svg.setAttribute('role', 'img');
+
+      const face = document.createElementNS(SVG_NS, 'circle');
+      face.setAttribute('class', 'face');
+      face.setAttribute('cx', '100');
+      face.setAttribute('cy', '100');
+      face.setAttribute('r', '96');
+      svg.appendChild(face);
+
+      for (let i = 0; i < 60; i++) {
+        const angle = (i * 6) * Math.PI / 180;
+        const isMajor = i % 5 === 0;
+        const inner = isMajor ? 82 : 88;
+        const outer = 94;
+        const x1 = 100 + inner * Math.sin(angle);
+        const y1 = 100 - inner * Math.cos(angle);
+        const x2 = 100 + outer * Math.sin(angle);
+        const y2 = 100 - outer * Math.cos(angle);
+        const tick = document.createElementNS(SVG_NS, 'line');
+        tick.setAttribute('class', 'tick ' + (isMajor ? 'major' : 'minor'));
+        tick.setAttribute('x1', x1);
+        tick.setAttribute('y1', y1);
+        tick.setAttribute('x2', x2);
+        tick.setAttribute('y2', y2);
+        svg.appendChild(tick);
+      }
+
+      for (let n = 1; n <= 12; n++) {
+        const angle = (n * 30) * Math.PI / 180;
+        const r = 70;
+        const x = 100 + r * Math.sin(angle);
+        const y = 100 - r * Math.cos(angle);
+        const text = document.createElementNS(SVG_NS, 'text');
+        text.setAttribute('class', 'num');
+        text.setAttribute('x', x);
+        text.setAttribute('y', y);
+        text.textContent = String(n);
+        svg.appendChild(text);
+      }
+
+      const hour = document.createElementNS(SVG_NS, 'line');
+      hour.setAttribute('class', 'hand hour');
+      hour.setAttribute('x1', '100'); hour.setAttribute('y1', '110');
+      hour.setAttribute('x2', '100'); hour.setAttribute('y2', '55');
+      svg.appendChild(hour);
+
+      const minute = document.createElementNS(SVG_NS, 'line');
+      minute.setAttribute('class', 'hand minute');
+      minute.setAttribute('x1', '100'); minute.setAttribute('y1', '112');
+      minute.setAttribute('x2', '100'); minute.setAttribute('y2', '32');
+      svg.appendChild(minute);
+
+      const second = document.createElementNS(SVG_NS, 'line');
+      second.setAttribute('class', 'hand second');
+      second.setAttribute('x1', '100'); second.setAttribute('y1', '116');
+      second.setAttribute('x2', '100'); second.setAttribute('y2', '24');
+      svg.appendChild(second);
+
+      const pin = document.createElementNS(SVG_NS, 'circle');
+      pin.setAttribute('class', 'pin');
+      pin.setAttribute('cx', '100'); pin.setAttribute('cy', '100'); pin.setAttribute('r', '4');
+      svg.appendChild(pin);
+
+      return { svg, hour, minute, second };
+    }
+
+    function buildCards() {
+      const grid = document.getElementById('clockGrid');
+      grid.innerHTML = '';
+      const refs = [];
+
+      CITIES.forEach((entry) => {
+        const card = document.createElement('article');
+        card.className = 'card' + (entry.isSource ? ' is-source' : '');
+
+        const continent = document.createElement('div');
+        continent.className = 'continent';
+        continent.textContent = entry.continent;
+        card.appendChild(continent);
+
+        const city = document.createElement('div');
+        city.className = 'city';
+        city.textContent = entry.city;
+        card.appendChild(city);
+
+        const tz = document.createElement('div');
+        tz.className = 'tz';
+        tz.textContent = entry.tz;
+        card.appendChild(tz);
+
+        const { svg, hour, minute, second } = buildClockSVG();
+        card.appendChild(svg);
+
+        const time = document.createElement('div');
+        time.className = 'time';
+        time.textContent = '--:--:--';
+        card.appendChild(time);
+
+        const date = document.createElement('div');
+        date.className = 'date';
+        date.textContent = '';
+        card.appendChild(date);
+
+        grid.appendChild(card);
+        refs.push({ entry, hour, minute, second, time, date });
+      });
+
+      return refs;
+    }
+
+    function getISTNowParts() {
+      const fmt = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false
+      });
+      const parts = fmt.formatToParts(new Date());
+      const get = (t) => parts.find(p => p.type === t).value;
+      return {
+        date: `${get('year')}-${get('month')}-${get('day')}`,
+        time: `${get('hour') === '24' ? '00' : get('hour')}:${get('minute')}`
+      };
+    }
+
+    function getZonedParts(instant, tz) {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz,
+        weekday: 'long',
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      }).formatToParts(instant);
+      const get = (t) => parts.find(p => p.type === t).value;
+      let hour = get('hour');
+      if (hour === '24') hour = '00';
+      return {
+        weekday: get('weekday'),
+        day: get('day'),
+        month: get('month'),
+        year: get('year'),
+        hour: parseInt(hour, 10),
+        minute: parseInt(get('minute'), 10),
+        second: parseInt(get('second'), 10)
+      };
+    }
+
+    function setHands(refs, h, m, s) {
+      const secondDeg = s * 6;
+      const minuteDeg = m * 6 + s * 0.1;
+      const hourDeg = (h % 12) * 30 + m * 0.5;
+      refs.hour.style.transform = `rotate(${hourDeg}deg)`;
+      refs.minute.style.transform = `rotate(${minuteDeg}deg)`;
+      refs.second.style.transform = `rotate(${secondDeg}deg)`;
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    let cardRefs = [];
+
+    function convert() {
+      const dateInput = document.getElementById('dateInput');
+      const timeInput = document.getElementById('timeInput');
+      const errorEl = document.getElementById('errorMsg');
+      const sourceEl = document.getElementById('sourceText');
+
+      const dateVal = dateInput.value;
+      const timeVal = timeInput.value;
+
+      if (!dateVal || !timeVal) {
+        errorEl.textContent = 'Please pick both a date and a time.';
+        return;
+      }
+      errorEl.textContent = '';
+
+      const instant = new Date(`${dateVal}T${timeVal}:00+05:30`);
+      if (isNaN(instant.getTime())) {
+        errorEl.textContent = 'That date/time is not valid.';
+        return;
+      }
+
+      const istParts = getZonedParts(instant, 'Asia/Kolkata');
+      sourceEl.textContent =
+        `${istParts.weekday}, ${istParts.day} ${istParts.month} ${istParts.year} — ` +
+        `${pad(istParts.hour)}:${pad(istParts.minute)}:${pad(istParts.second)} IST`;
+
+      cardRefs.forEach((ref) => {
+        const p = getZonedParts(instant, ref.entry.tz);
+        setHands(ref, p.hour, p.minute, p.second);
+        ref.time.textContent = `${pad(p.hour)}:${pad(p.minute)}:${pad(p.second)}`;
+        ref.date.textContent = `${p.weekday}, ${p.day} ${p.month} ${p.year}`;
+      });
+    }
+
+    function setInputsToNowIST() {
+      const { date, time } = getISTNowParts();
+      document.getElementById('dateInput').value = date;
+      document.getElementById('timeInput').value = time;
+    }
+
+    function init() {
+      cardRefs = buildCards();
+      setInputsToNowIST();
+      convert();
+
+      document.getElementById('convertBtn').addEventListener('click', convert);
+      document.getElementById('nowBtn').addEventListener('click', () => {
+        setInputsToNowIST();
+        convert();
+      });
+      document.getElementById('dateInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') convert();
+      });
+      document.getElementById('timeInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') convert();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

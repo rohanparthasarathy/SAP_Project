@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-1: #0f172a;
+  --bg-2: #1e293b;
+  --accent: #38bdf8;
+  --accent-2: #818cf8;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --card-bg: rgba(255, 255, 255, 0.06);
+  --card-border: rgba(255, 255, 255, 0.12);
+}
+
+body {
+  color: var(--text);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
+    radial-gradient(1000px 500px at 110% 10%, rgba(129, 140, 248, 0.18), transparent 60%),
+    linear-gradient(135deg, var(--bg-1), var(--bg-2));
+  background-attachment: fixed;
+  min-height: 100vh;
+}
