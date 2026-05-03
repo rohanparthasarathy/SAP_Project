@@ -7,6 +7,11 @@
 
 const MEMORY = new Map<string, number>();
 
+/** In-memory fallback for site-wide successful-analyze count (single process only). */
+let memorySuccessfulAnalyzeTotal = 0;
+
+const TOTAL_SUCCESSFUL_ANALYZES_KEY = "sap-health:analyze-success-total";
+
 let redisPromise: Promise<Awaited<ReturnType<typeof createRedis>> | null> | undefined;
 
 async function createRedis() {
@@ -154,4 +159,25 @@ export async function assertQuotaAllows(ip: string): Promise<
     };
   }
   return { ok: true };
+}
+
+/**
+ * Increment after extract + age-advice succeed. Site-wide total; shared Redis gives accurate counts on Vercel.
+ */
+export async function incrementSuccessfulAnalyzeTotal(): Promise<number> {
+  const redis = await getRedis();
+  if (redis) {
+    return redis.incr(TOTAL_SUCCESSFUL_ANALYZES_KEY);
+  }
+  memorySuccessfulAnalyzeTotal += 1;
+  return memorySuccessfulAnalyzeTotal;
+}
+
+export async function getSuccessfulAnalyzeTotal(): Promise<number> {
+  const redis = await getRedis();
+  if (redis) {
+    const raw = await redis.get<string>(TOTAL_SUCCESSFUL_ANALYZES_KEY);
+    return raw ? parseInt(String(raw), 10) || 0 : 0;
+  }
+  return memorySuccessfulAnalyzeTotal;
 }

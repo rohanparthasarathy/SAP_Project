@@ -19,6 +19,7 @@ type AnalyzeResponse = {
     unlimited: boolean;
     resetsInSeconds: number;
   };
+  usage?: { totalSuccessfulAnalyzes: number };
 };
 
 type QuotaInfo = {
@@ -27,6 +28,7 @@ type QuotaInfo = {
   used: number | null;
   unlimited: boolean;
   resetsInSeconds: number;
+  totalSuccessfulAnalyzes: number | null;
 };
 
 function fmtNum(n: number | null | undefined, suffix = ""): string {
@@ -94,6 +96,8 @@ export default function Home() {
           used: data.used ?? null,
           unlimited: data.unlimited,
           resetsInSeconds: data.resetsInSeconds ?? 86400,
+          totalSuccessfulAnalyzes:
+            typeof data.totalSuccessfulAnalyzes === "number" ? data.totalSuccessfulAnalyzes : null,
         });
       }
     } catch {
@@ -145,14 +149,18 @@ export default function Home() {
       if (data.quota && typeof data.quota === "object") {
         const q = data.quota as AnalyzeResponse["quota"];
         if (q && typeof q.unlimited === "boolean") {
-          setQuota({
+          setQuota((prev) => ({
             remaining: q.remaining ?? null,
             limit: q.limit ?? null,
             used:
               q.remaining != null && q.limit != null ? q.limit - q.remaining : null,
             unlimited: q.unlimited,
             resetsInSeconds: q.resetsInSeconds ?? 86400,
-          });
+            totalSuccessfulAnalyzes:
+              typeof (data as AnalyzeResponse).usage?.totalSuccessfulAnalyzes === "number"
+                ? (data as AnalyzeResponse).usage!.totalSuccessfulAnalyzes
+                : (prev?.totalSuccessfulAnalyzes ?? null),
+          }));
         }
       }
 
@@ -303,28 +311,36 @@ export default function Home() {
           educational and not medical advice.
         </p>
         {quota && (
-          <p className="mt-3 rounded-lg border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-slate-300">
-            {quota.unlimited ? (
-              <span>Analyze quota: unlimited (admin override).</span>
-            ) : (
-              <span>
-                Analyses remaining today:{" "}
-                <strong className="text-sky-300">{quota.remaining ?? 0}</strong>
-                {quota.limit != null ? (
-                  <>
-                    {" "}
-                    of <strong className="text-slate-200">{quota.limit}</strong>
-                  </>
-                ) : null}{" "}
-                (UTC day; resets in about{" "}
-                {Math.max(
-                  1,
-                  Math.round((quota.resetsInSeconds ?? 0) / 3600),
-                )}{" "}
-                h).
-              </span>
-            )}
-          </p>
+          <div className="mt-3 space-y-2">
+            <p className="rounded-lg border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-slate-300">
+              {quota.unlimited ? (
+                <span>Analyze quota: unlimited (admin override).</span>
+              ) : (
+                <span>
+                  Analyses remaining today:{" "}
+                  <strong className="text-sky-300">{quota.remaining ?? 0}</strong>
+                  {quota.limit != null ? (
+                    <>
+                      {" "}
+                      of <strong className="text-slate-200">{quota.limit}</strong>
+                    </>
+                  ) : null}{" "}
+                  (UTC day; resets in about{" "}
+                  {Math.max(
+                    1,
+                    Math.round((quota.resetsInSeconds ?? 0) / 3600),
+                  )}{" "}
+                  h).
+                </span>
+              )}
+            </p>
+            <p className="rounded-lg border border-indigo-500/20 bg-indigo-950/20 px-4 py-2 text-sm text-slate-300">
+              Successful analyzes completed (site-wide, all time):{" "}
+              <strong className="text-indigo-300">
+                {quota.totalSuccessfulAnalyzes != null ? quota.totalSuccessfulAnalyzes.toLocaleString() : "—"}
+              </strong>
+            </p>
+          </div>
         )}
       </header>
 

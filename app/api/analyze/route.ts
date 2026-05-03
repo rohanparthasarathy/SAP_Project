@@ -5,6 +5,7 @@ import {
   consumeAnalyzeQuota,
   getClientIp,
   getQuotaState,
+  incrementSuccessfulAnalyzeTotal,
 } from "@/lib/analyze-quota";
 import { validationErrorPayload } from "@/lib/api-errors";
 import { generateAgeGroupAdvice } from "@/lib/age-advice";
@@ -170,7 +171,13 @@ export async function POST(request: Request) {
       throw err;
     }
 
-    return NextResponse.json({ extracted, ageAdvice, ...quotaAfter });
+    const totalSuccessfulAnalyzes = await incrementSuccessfulAnalyzeTotal();
+    return NextResponse.json({
+      extracted,
+      ageAdvice,
+      ...quotaAfter,
+      usage: { totalSuccessfulAnalyzes },
+    });
   } catch (err) {
     if (err instanceof ZodError) {
       return NextResponse.json(

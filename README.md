@@ -41,6 +41,7 @@ Next.js app that accepts a nutrition-label photo and runs **one combined vision 
 - **Token flow:** One vision API call (classification + numbers in one JSON). If the model says the image is **not** a nutrition label, the server returns an error and **does not** run the age-advice text call. If it is a label, **one** text call produces the three age columns.
 - **Detail level:** Default `OPENAI_VISION_DETAIL=low` minimizes image token usage. Use `high` on Vercel if labels are hard to read.
 - **Daily limit:** **20** analyze actions per **client IP** per **UTC day** (configurable). Set `ANALYZE_LIMIT_DISABLED=true` to turn off. The UI shows **analyses remaining**. Without **Upstash Redis** env vars, the count is **in-memory** (single instance / dev; resets on cold start). For production, add a free [Upstash](https://upstash.com) Redis and set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+- **Usage tracker:** The header shows **total successful analyzes** (extract + age advice completed, site-wide). The same **Upstash Redis** stores this counter; without Redis it is only accurate on a single running server process.
 - **History:** Past runs are stored in **browser localStorage** only (this device).
 
 ## Deploy to Vercel (free `*.vercel.app` URL)
